@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSE | AI Health & Wellbeing OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- CSS VARIABLES (Pastel Theme) --- */
+        :root {
+            --bg-color: #f4f9f5; --primary: #8bc2a3; --primary-dark: #6ba885;
+            --secondary: #a3adfc; --accent: #ffc49b; --danger: #ff9b9b;
+            --text-dark: #222222; --text-light: #555555; --white: #ffffff;
+            --shadow: 0 10px 25px rgba(0,0,0,0.08); --transition: all 0.3s ease;
+        }
+
+        /* --- GLOBAL STYLES --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
+        body { background-color: var(--bg-color); color: var(--text-dark); line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .section-title { text-align: center; margin-bottom: 50px; font-size: 2.5rem; font-weight: 700; color: var(--text-dark); }
+        
+        /* --- NAVIGATION --- */
+        nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); position: fixed; width: 100%; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .nav-content { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; max-width: 1200px; margin: 0 auto; }
+        .logo { font-size: 1.8rem; font-weight: 700; color: var(--primary-dark); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a { font-weight: 500; transition: var(--transition); }
+        .nav-links a:hover { color: var(--primary-dark); }
+
+        /* --- HERO --- */
+        .hero { height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; background: linear-gradient(135deg, #e0f2e9 0%, #e6e9ff 100%); padding-top: 60px; }
+        .hero-content h1 { font-size: 3.5rem; margin-bottom: 20px; color: var(--text-dark); animation: fadeInDown 1s ease; }
+        .hero-content p { font-size: 1.2rem; color: var(--text-light); margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto; animation: fadeInUp 1s ease 0.3s both; }
+        .btn { padding: 12px 30px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: var(--transition); background: var(--primary); color: var(--white); font-size: 1rem; box-shadow: 0 4px 15px rgba(139, 194, 163, 0.4); display: inline-flex; align-items: center; justify-content: center; gap: 10px;}
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(139, 194, 163, 0.6); filter: brightness(1.05); }
+        .btn-secondary { background: var(--secondary); box-shadow: 0 4px 15px rgba(163, 173, 252, 0.4); }
+        .btn-secondary:hover { background: #8a96f0; box-shadow: 0 8px 20px rgba(163, 173, 252, 0.6); }
+
+        /* --- DASHBOARD CARDS --- */
+        .dashboard { padding: 100px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-bottom: 30px;}
+        .card { background: var(--white); padding: 30px; border-radius: 20px; box-shadow: var(--shadow); transition: var(--transition); border-top: 5px solid var(--primary); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .card h3 { margin-bottom: 15px; color: var(--text-dark); font-size: 1.3rem; }
+        .card p.desc { font-size: 0.9rem; color: var(--text-light); margin-bottom: 15px; }
+
+        input[type="number"], input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 2px solid #eef0f2; border-radius: 10px; outline: none; font-size: 1rem; background: #fafafa; transition: var(--transition); }
+        input:focus { border-color: var(--primary); background: var(--white); }
+        .result-box { margin-top: 15px; padding: 15px; background: #f0f0f0; border-radius: 10px; font-weight: 600; text-align: center; display: none; transition: var(--transition); color: var(--white);}
+
+        /* Specialized Dashboard Components */
+        .risk-card { border-top-color: var(--danger); text-align: center; }
+        .risk-circle { width: 130px; height: 130px; border-radius: 50%; border: 8px solid #eee; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 700; color: var(--text-dark); transition: border-color 0.5s ease; }
+        
+        .history-vault { border-top-color: var(--secondary); grid-column: 1 / -1; }
+        .vault-list { max-height: 250px; overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 15px; }
+        .vault-item { background: #f8faff; border-left: 4px solid var(--secondary); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.5s ease; }
+        .vault-item-title { font-weight: 600; color: var(--text-dark); }
+        .vault-item-date { font-size: 0.85rem; color: var(--text-light); }
+        .vault-tag { background: #e0e4ff; color: var(--secondary); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+
+        .upload-card { border-top-color: var(--accent); }
+        .upload-area { border: 2px dashed #ccc; border-radius: 15px; padding: 30px 20px; text-align: center; cursor: pointer; transition: var(--transition); background: #fafafa; }
+        .upload-area:hover { background: #f0f7f3; border-color: var(--primary); }
+        .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+        .chart-card { grid-column: 1 / -1; border-top: none; }
+
+        /* --- RESPONSIVE CHATBOT --- */
+        .chatbot-section { padding: 80px 0; background: linear-gradient(to bottom, var(--bg-color), var(--white)); }
+        .chat-container { max-width: 800px; margin: 0 auto; border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; background: var(--white); border: 1px solid #eee; display: flex; flex-direction: column; }
+        .chat-header { background: var(--secondary); padding: 20px; color: white; text-align: center; font-weight: 600; font-size: 1.2rem; }
+        .chat-window { height: 400px; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fcfcfc; scroll-behavior: smooth; }
+        .message { padding: 14px 20px; border-radius: 20px; max-width: 85%; width: fit-content; animation: fadeIn 0.3s ease; font-size: 0.95rem; line-height: 1.5; word-wrap: break-word; }
+        .ai-msg { background: #eef2f5; color: var(--text-dark); align-self: flex-start; border-bottom-left-radius: 5px; }
+        .user-msg { background: var(--primary); color: var(--white); align-self: flex-end; border-bottom-right-radius: 5px; }
+        .chat-input { display: flex; padding: 20px; background: var(--white); border-top: 1px solid #eee; }
+        .chat-input input { margin: 0; border-radius: 30px 0 0 30px; border-right: none; flex-grow: 1; }
+        .chat-input button { border-radius: 0 30px 30px 0; padding: 12px 25px; margin: 0; white-space: nowrap; }
+
+        .typing-indicator { display: none; padding: 14px 20px; background: #eef2f5; border-radius: 20px; border-bottom-left-radius: 5px; align-self: flex-start; width: fit-content; gap: 5px; align-items: center; }
+        .dot { width: 8px; height: 8px; background: #a3adfc; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        /* --- JOIN PORTAL (AUTH) --- */
+        .join { padding: 100px 0; background: var(--white); }
+        .join-form { max-width: 450px; margin: 0 auto; background: var(--white); padding: 40px; border-radius: 20px; box-shadow: var(--shadow); border-top: 5px solid var(--text-dark); }
+        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: var(--text-light); font-size: 0.9rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
+        .divider:not(:empty)::before { margin-right: .25em; }
+        .divider:not(:empty)::after { margin-left: .25em; }
+
+        /* Animations */
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media(max-width: 768px) { .nav-links { display: none; } .hero-content h1 { font-size: 2.5rem; } }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-content">
+            <div class="logo">PULSE</div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#dashboard">Health Hub</a>
+                <a href="#chatbot">Mind Space AI</a>
+                <a href="#join" id="navJoinBtn" class="btn" style="padding: 8px 25px;">Join Now</a>
+                <button id="navLogoutBtn" class="btn btn-secondary" style="display: none; padding: 8px 25px;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="container hero-content">
+            <h1>Your Complete Health OS</h1>
+            <p>Predict illness risks, track daily sleep and vitals, securely store your entire medical history, and get 24/7 AI wellness support.</p>
+            <a href="#dashboard" class="btn">Enter Health Hub</a>
+        </div>
+    </section>
+
+    <section id="dashboard" class="dashboard container">
+        <h2 class="section-title">Central Health Hub</h2>
+        <div class="grid">
+            
+            <div class="card risk-card">
+                <h3>Daily Illness Prediction</h3>
+                <p class="desc">AI prediction based on your recent sleep, hydration, and activity.</p>
+                <div class="risk-circle" id="riskCircle" style="border-color: #eee;"><span id="riskText">--%</span></div>
+                <p id="riskMessage" style="font-weight: 500; color: var(--text-light);">Log your vitals to see your risk.</p>
+            </div>
+            
+            <div class="card">
+                <h3>Log Daily Vitals</h3>
+                <p class="desc">Logging securely saves to your profile and updates the predictor.</p>
+                <input type="number" id="sleepIn" placeholder="Hours Slept Last Night">
+                <input type="number" id="waterIn" placeholder="Water Drank Today (Liters)">
+                <input type="number" id="exerciseIn" placeholder="Exercise Today (Minutes)">
+                <button class="btn btn-secondary" onclick="window.updateVitals()" style="width: 100%;">Sync Vitals to Database</button>
+            </div>
+            
+            <div class="card upload-card">
+                <h3>Smart Record Scanner</h3>
+                <p class="desc">Upload lab results or prescriptions to securely add them to your vault.</p>
+                <input type="file" id="fileInput" accept=".pdf, image/*" style="display: none;">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div id="uploadContent">
+                        <p style="margin-bottom: 5px;">Click to <strong>Upload Medical File</strong></p>
+                        <span style="font-size: 0.8rem; color: #888;">Supports PDF, JPG, PNG</span>
+                    </div>
+                    <div id="uploadLoading" style="display: none;"><div class="loader"></div><p style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">AI scanning document...</p></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Hydration Goal AI</h3>
+                <p class="desc">Calculates exact daily water needs based on weight and activity.</p>
+                <input type="number" id="userWeight" placeholder="Your Weight (kg)">
+                <input type="number" id="dailyExercise" placeholder="Avg Daily Exercise (Minutes)">
+                <button class="btn" onclick="window.calculateWater()" style="width: 100%;">Calculate Need</button>
+                <div id="waterResult" class="result-box"></div>
+            </div>
+            
+            <div class="card">
+                <h3>BMI Analyzer</h3>
+                <p class="desc">Check your body mass index instantly.</p>
+                <input type="number" id="heightBMI" placeholder="Height (cm)">
+                <input type="number" id="weightBMI" placeholder="Weight (kg)">
+                <button class="btn" onclick="window.calculateBMI()" style="width: 100%; background: var(--accent); color: var(--text-dark);">Calculate BMI</button>
+                <div id="bmiResult" class="result-box"></div>
+            </div>
+        </div>
+
+        <div class="card history-vault">
+            <h3>Your Medical History Vault</h3>
+            <p class="desc">Your entire health timeline. Documents scanned above will appear here automatically.</p>
+            <div class="vault-list" id="vaultList">
+                <div class="vault-item">
+                    <div>
+                        <div class="vault-item-title">Comprehensive Blood Panel</div>
+                        <div class="vault-item-date">March 12, 2024 • Initial Record</div>
+                    </div>
+                    <div class="vault-tag">Lab Result</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card chart-card mt-30">
+            <h3 style="text-align: center;">Vitals Trend Analysis</h3>
+            <canvas id="healthChart" height="70"></canvas>
+        </div>
+    </section>
+
+    <section id="chatbot" class="chatbot-section">
+        <div class="container">
+            <h2 class="section-title">Clinical Mind Space AI</h2>
+            <div class="chat-container">
+                <div class="chat-header">PULSE Health & Wellbeing Assistant</div>
+                <div class="chat-window" id="chatWindow">
+                    <div class="message ai-msg">
+                        <strong>Hello!</strong> I am the PULSE AI Assistant. I can help with information about diseases (fever, cold, headache), first aid (burns, cuts), and stress & wellness. <br><br>How can I help you today?
+                    </div>
+                    <div class="typing-indicator" id="typingIndicator">
+                        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Try asking 'Tell me about fever'..." onkeypress="window.handleEnter(event)">
+                    <button class="btn btn-secondary" onclick="window.sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="join" class="join">
+        <div class="container">
+            <h2 class="section-title" id="authTitle">Join the Future of Health</h2>
+            <div class="join-form">
+                
+                <div id="authFormContent">
+                    <button id="googleSignInBtn" class="btn" style="background: #ffffff; color: #444; width: 100%; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px;">
+                        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                        Continue with Google
+                    </button>
+                    
+                    <div class="divider">or</div>
+
+                    <input type="text" id="authName" placeholder="Full Name">
+                    <input type="email" id="authEmail" placeholder="Email Address">
+                    <input type="password" id="authPassword" placeholder="Password">
+                    
+                    <p id="authErrorMsg" style="color: var(--danger); font-size: 0.9rem; margin-top: 5px; text-align: center; display: none; font-weight: 500;"></p>
+                    
+                    <button id="authSubmitBtn" class="btn" style="width: 100%; margin-top: 15px; background: var(--text-dark);">Create My Account</button>
+                    
+                    <p style="text-align: center; margin-top: 20px; font-size: 0.95rem; color: var(--text-light);">
+                        <span id="authToggleText">Already have an account?</span> 
+                        <a href="javascript:void(0)" id="authToggleBtn" style="color: var(--primary-dark); font-weight: 600;">Sign In</a>
+                    </p>
+                </div>
+
+                <div id="verificationScreen" style="display: none; text-align: center; animation: fadeIn 0.5s ease;">
+                    <div style="width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 20px auto;">✓</div>
+                    <h3 style="color: var(--text-dark); margin-bottom: 15px;">Verify Your Email</h3>
+                    <p id="verificationText" style="color: var(--text-light); margin-bottom: 25px; line-height: 1.6;"></p>
+                    <button id="backToLoginBtn" class="btn" style="width: 100%; background: var(--secondary);">Return to Login</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script type="module">
+        // Import Firebase Auth
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { 
+            getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
+            signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, sendEmailVerification 
+        } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        
+        // Import Firestore
+        import { 
+            getFirestore, doc, setDoc, collection, addDoc, query, orderBy, getDocs 
+        } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyANbnCaCQqiONR51j6boXajZ3bcyLT_Tw0",
+            authDomain: "pulse-d896e.firebaseapp.com",
+            projectId: "pulse-d896e",
+            storageBucket: "pulse-d896e.firebasestorage.app",
+            messagingSenderId: "977649776027",
+            appId: "1:977649776027:web:72abd70bb00655666f9d3e"
+        };
+
+        // Initialize Firebase Apps
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        let currentUser = null; 
+
+        // --- 1. DASHBOARD & CHART INITIALIZATION ---
+        const ctx = document.getElementById('healthChart').getContext('2d');
+        window.myChart = new Chart(ctx, { 
+            type: 'bar', 
+            data: { 
+                labels: [], 
+                datasets: [
+                    { label: 'Sleep (Hrs)', data: [], backgroundColor: '#ffc49b', borderRadius: 4 }, 
+                    { label: 'Water (L)', data: [], backgroundColor: '#a3adfc', borderRadius: 4 }, 
+                    { label: 'Exercise (Mins)', data: [], backgroundColor: '#8bc2a3', borderRadius: 4 }
+                ] 
+            }, 
+            options: { responsive: true, scales: { y: { beginAtZero: true } } } 
+        });
+
+        function resetDashboard() {
+            window.myChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+            window.myChart.data.datasets[0].data = [7, 6.5, 8, 5, 7.5];
+            window.myChart.data.datasets[1].data = [2, 2.5, 1.8, 3, 2.2];
+            window.myChart.data.datasets[2].data = [30, 45, 0, 60, 20];
+            window.myChart.update();
+            document.getElementById('riskText').innerText = "--%";
+            document.getElementById('riskMessage').innerText = "Log your vitals to see your risk.";
+            document.getElementById('riskCircle').style.borderColor = '#eee';
+            document.getElementById('riskMessage').style.color = 'var(--text-light)';
+        }
+        
+        resetDashboard();
+
+        async function loadUserData(uid) {
+            const q = query(collection(db, "users", uid, "vitals"), orderBy("timestamp", "asc"));
+            const snapshot = await getDocs(q);
+            
+            if (!snapshot.empty) {
+                const labels = [], sleepData = [], waterData = [], exerciseData = [];
+                let lastS = 0, lastW = 0, lastE = 0;
+                
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    labels.push(data.dateLabel || 'Log');
+                    sleepData.push(data.sleep); waterData.push(data.water); exerciseData.push(data.exercise);
+                    lastS = data.sleep; lastW = data.water; lastE = data.exercise;
+                });
+                
+                window.myChart.data.labels = labels;
+                window.myChart.data.datasets[0].data = sleepData;
+                window.myChart.data.datasets[1].data = waterData;
+                window.myChart.data.datasets[2].data = exerciseData;
+                window.myChart.update();
+                
+                calculateIllnessRisk(lastS, lastW, lastE);
+            } else {
+                resetDashboard(); 
+            }
+        }
+
+        // --- 2. AUTHENTICATION UI & LOGIC ---
+        const authName = document.getElementById('authName'), authEmail = document.getElementById('authEmail'), authPassword = document.getElementById('authPassword'), authErrorMsg = document.getElementById('authErrorMsg');
+        const authFormContent = document.getElementById('authFormContent'), verificationScreen = document.getElementById('verificationScreen'), verificationText = document.getElementById('verificationText');
+        let isSignUpMode = true; 
+
+        function switchToLogin() {
+            isSignUpMode = false; authErrorMsg.style.display = 'none'; authFormContent.style.display = 'block'; verificationScreen.style.display = 'none';
+            document.getElementById('authTitle').innerText = "Welcome Back to PULSE"; authName.style.display = 'none'; document.getElementById('authSubmitBtn').innerText = "Sign In"; document.getElementById('authToggleText').innerText = "Don't have an account?"; document.getElementById('authToggleBtn').innerText = "Sign Up";
+        }
+
+        document.getElementById('authToggleBtn').addEventListener('click', () => {
+            if (!isSignUpMode) {
+                isSignUpMode = true; authErrorMsg.style.display = 'none'; document.getElementById('authTitle').innerText = "Join the Future of Health"; authName.style.display = 'block'; document.getElementById('authSubmitBtn').innerText = "Create My Account"; document.getElementById('authToggleText').innerText = "Already have an account?"; document.getElementById('authToggleBtn').innerText = "Sign In";
+            } else { switchToLogin(); }
+        });
+
+        document.getElementById('backToLoginBtn').addEventListener('click', () => { authEmail.value = ''; authPassword.value = ''; switchToLogin(); });
+
+        document.getElementById('authSubmitBtn').addEventListener('click', () => {
+            const email = authEmail.value.trim(), password = authPassword.value.trim(), name = authName.value.trim();
+            authErrorMsg.style.display = 'none';
+            if (!email || !password || (isSignUpMode && !name)) { authErrorMsg.innerText = "Please fill in all fields."; authErrorMsg.style.display = 'block'; return; }
+
+            if (isSignUpMode) {
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        setDoc(doc(db, "users", userCredential.user.uid), { email: email, name: name, createdAt: new Date() });
+                        sendEmailVerification(userCredential.user).then(() => {
+                            signOut(auth).then(() => {
+                                authFormContent.style.display = 'none'; verificationScreen.style.display = 'block';
+                                document.getElementById('authTitle').innerText = "Account Created";
+                                verificationText.innerText = `We have sent you a verification email to ${email}. please verify it and log in.`;
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        authErrorMsg.innerText = err.code === 'auth/email-already-in-use' ? "User already exists. Please sign in." : err.message;
+                        authErrorMsg.style.display = 'block';
+                    });
+            } else {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        if (!userCredential.user.emailVerified) {
+                            signOut(auth); authErrorMsg.innerText = "Please verify your email before logging in. Check your inbox."; authErrorMsg.style.display = 'block';
+                        }
+                    })
+                    .catch(() => { authErrorMsg.innerText = "Email or Password is incorrect"; authErrorMsg.style.display = 'block'; });
+            }
+        });
+
+        document.getElementById('googleSignInBtn').addEventListener('click', () => {
+            authErrorMsg.style.display = 'none';
+            signInWithPopup(auth, googleProvider).then((result) => {
+                setDoc(doc(db, "users", result.user.uid), { email: result.user.email, name: result.user.displayName, createdAt: new Date() }, { merge: true });
+            }).catch((error) => { authErrorMsg.innerText = error.message; authErrorMsg.style.display = 'block'; });
+        });
+
+        document.getElementById('navLogoutBtn').addEventListener('click', () => { 
+            signOut(auth).then(() => { window.location.hash = "home"; switchToLogin(); }); 
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user && user.emailVerified) {
+                currentUser = user; 
+                document.getElementById('navJoinBtn').style.display = 'none';
+                document.getElementById('navLogoutBtn').style.display = 'block';
+                document.getElementById('join').style.display = 'none'; 
+                window.location.hash = "dashboard";
+                authEmail.value = ''; authPassword.value = ''; authName.value = '';
+                
+                await loadUserData(user.uid); 
+            } else {
+                currentUser = null;
+                document.getElementById('navJoinBtn').style.display = 'block';
+                document.getElementById('navLogoutBtn').style.display = 'none';
+                document.getElementById('join').style.display = 'block'; 
+                resetDashboard(); 
+            }
+        });
+
+        // --- 3. EXPOSING DASHBOARD FUNCTIONS TO WINDOW ---
+        
+        window.updateVitals = async function() {
+            if(!currentUser) { alert("Please sign in to log and save your vitals securely."); return; }
+
+            const s = parseFloat(document.getElementById('sleepIn').value);
+            const w = parseFloat(document.getElementById('waterIn').value);
+            const e = parseFloat(document.getElementById('exerciseIn').value);
+            
+            if (!isNaN(s) && !isNaN(w) && !isNaN(e)) {
+                try {
+                    const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+                    
+                    await addDoc(collection(db, "users", currentUser.uid, "vitals"), {
+                        sleep: s, water: w, exercise: e, dateLabel: dateLabel, timestamp: new Date()
+                    });
+
+                    window.myChart.data.labels.push(dateLabel); 
+                    window.myChart.data.datasets[0].data.push(s); 
+                    window.myChart.data.datasets[1].data.push(w); 
+                    window.myChart.data.datasets[2].data.push(e); 
+                    window.myChart.update();
+                    
+                    calculateIllnessRisk(s, w, e);
+                    
+                    document.getElementById('sleepIn').value = ''; document.getElementById('waterIn').value = ''; document.getElementById('exerciseIn').value = '';
+                } catch (error) {
+                    console.error("Error saving to database:", error);
+                    alert("Could not save to database. Check connection.");
+                }
+            } else { alert("Please fill in Sleep, Water, and Exercise to sync."); }
+        }
+
+        function calculateIllnessRisk(sleep, water, exercise) {
+            let risk = 15; if (sleep < 5) risk += 30; else if (sleep < 7) risk += 10; else if (sleep >= 7 && sleep <= 9) risk -= 5;
+            if (water < 1.5) risk += 10; else if (water >= 2.5) risk -= 5; if (exercise < 15) risk += 5; else if (exercise >= 30) risk -= 5;
+            risk = Math.max(1, Math.min(risk, 99)); 
+            
+            document.getElementById('riskText').innerText = `${risk}%`; 
+            const circle = document.getElementById('riskCircle'), msg = document.getElementById('riskMessage');
+            if (risk < 20) { circle.style.borderColor = 'var(--primary)'; msg.innerText = "Immune system looks strong today!"; msg.style.color = 'var(--primary-dark)'; } 
+            else if (risk < 40) { circle.style.borderColor = 'var(--accent)'; msg.innerText = "Slight fatigue detected. Try to rest tonight."; msg.style.color = '#d6813b'; } 
+            else { circle.style.borderColor = 'var(--danger)'; msg.innerText = "High risk of illness. Prioritize sleep & water."; msg.style.color = '#d9534f'; }
+        }
+
+        window.calculateWater = function() { const w = parseFloat(document.getElementById('userWeight').value), e = parseFloat(document.getElementById('dailyExercise').value) || 0, r = document.getElementById('waterResult'); if (w > 0) { r.style.display = 'block'; r.style.backgroundColor = 'var(--secondary)'; r.innerHTML = `Goal: <strong>${((w * 0.033) + ((e / 30) * 0.35)).toFixed(1)} Liters</strong> / day.`; } }
+        window.calculateBMI = function() { const h = document.getElementById('heightBMI').value, w = document.getElementById('weightBMI').value, r = document.getElementById('bmiResult'); if (h > 0 && w > 0) { const bmi = (w / ((h/100) * (h/100))).toFixed(1); r.style.display = 'block'; r.style.backgroundColor = bmi < 18.5 ? 'var(--accent)' : bmi < 24.9 ? 'var(--primary)' : bmi < 29.9 ? '#ffb347' : 'var(--danger)'; r.innerHTML = `BMI: <strong>${bmi}</strong>`; } }
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            if(!currentUser) { alert("Please sign in to securely upload to your vault."); return; }
+            if(this.files.length > 0) {
+                document.getElementById('uploadContent').style.display = 'none'; document.getElementById('uploadLoading').style.display = 'block';
+                setTimeout(() => { 
+                    document.getElementById('uploadLoading').style.display = 'none'; document.getElementById('uploadContent').style.display = 'block'; 
+                    const d = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); 
+                    const i = document.createElement('div'); i.className = 'vault-item'; 
+                    i.innerHTML = `<div><div class="vault-item-title">${this.files[0].name.split('.')[0]} (AI Scanned)</div><div class="vault-item-date">${d} • Just Uploaded</div></div><div class="vault-tag" style="background: var(--primary); color: white;">New Record</div>`; 
+                    document.getElementById('vaultList').prepend(i); 
+                    alert("Document scanned into Vault locally."); 
+                }, 2000);
+            }
+        });
+
+        // --- 4. NEW KNOWLEDGE-BASE CHATBOT LOGIC ---
+        const chatWindow = document.getElementById('chatWindow'), chatInput = document.getElementById('chatInput'), typingIndicator = document.getElementById('typingIndicator');
+        
+        window.handleEnter = function(e) { if (e.key === 'Enter') window.sendMessage(); }
+        function scrollToBottom() { chatWindow.scrollTop = chatWindow.scrollHeight; }
+
+        window.sendMessage = function() {
+            const text = chatInput.value.trim(); if (text === '') return;
+            const userDiv = document.createElement('div'); userDiv.className = `message user-msg`; userDiv.innerText = text; chatWindow.insertBefore(userDiv, typingIndicator);
+            chatInput.value = ''; scrollToBottom(); typingIndicator.style.display = 'flex'; scrollToBottom();
+            
+            setTimeout(() => { 
+                typingIndicator.style.display = 'none'; 
+                
+                // Fetch response from custom knowledge base
+                const reply = getResponse(text.toLowerCase());
+                
+                // Print with fade effect
+                const msgDiv = document.createElement('div'); msgDiv.className = `message ai-msg`; chatWindow.insertBefore(msgDiv, typingIndicator);
+                msgDiv.innerHTML = reply; msgDiv.style.opacity = 0;
+                setTimeout(() => { msgDiv.style.opacity = 1; scrollToBottom(); }, 50);
+                
+            }, 600 + Math.random() * 400); // Slight typing delay
+        }
+
+        // 🧠 KNOWLEDGE BASE
+        const diseases = {
+            fever: {
+                info: "Body temperature increase due to infection.",
+                symptoms: "High temperature, sweating, weakness.",
+                care: "Rest, hydration, light food.",
+                doctor: "If above 102°F or lasts more than 2 days."
+            },
+            cold: {
+                info: "Viral infection affecting nose and throat.",
+                symptoms: "Runny nose, sneezing, mild fever.",
+                care: "Warm fluids, rest, steam inhalation.",
+                doctor: "If breathing issues or long duration."
+            },
+            headache: {
+                info: "Pain in head due to stress, dehydration, or strain.",
+                symptoms: "Throbbing or dull pain.",
+                care: "Rest, hydration, avoid screens.",
+                doctor: "If severe or frequent."
+            },
+            stomach: {
+                info: "Digestive discomfort or infection.",
+                symptoms: "Pain, bloating, nausea.",
+                care: "Light food, hydration, avoid junk.",
+                doctor: "If persistent or severe pain."
+            },
+            cough: {
+                info: "Reflex to clear throat or lungs.",
+                symptoms: "Dry or wet cough.",
+                care: "Warm fluids, rest.",
+                doctor: "If lasts more than 1 week."
+            }
+        };
+
+        // 🧠 RESPONSE ENGINE
+        function getResponse(msg) {
+            // CHECK DISEASES
+            for (let key in diseases) {
+                if (msg.includes(key)) {
+                    let d = diseases[key];
+                    return `
+                    🏥 <b>${key.toUpperCase()}</b><br>
+                    <b>About:</b> ${d.info}<br>
+                    <b>Symptoms:</b> ${d.symptoms}<br>
+                    <b>Care:</b> ${d.care}<br>
+                    ⚠️ <b>See doctor if:</b> ${d.doctor}
+                    `;
+                }
+            }
+
+            // FIRST AID
+            if (msg.includes("burn")) {
+                return `
+                🔥 <b>Burn First Aid:</b><br>
+                • Cool under water (10–15 min)<br>
+                • Do not apply ice<br>
+                • Cover with clean cloth<br>
+                ⚠️ Severe burns need medical help
+                `;
+            }
+
+            if (msg.includes("cut")) {
+                return `
+                🩹 <b>Cut First Aid:</b><br>
+                • Clean with water<br>
+                • Apply pressure<br>
+                • Bandage it<br>
+                ⚠️ Seek help if bleeding continues
+                `;
+            }
+
+            // STRESS
+            if (msg.includes("stress") || msg.includes("anxiety")) {
+                return `
+                🧘 <b>Stress Care:</b><br>
+                • Deep breathing<br>
+                • Take breaks<br>
+                • Talk to someone
+                `;
+            }
+
+            // SEX EDUCATION (SAFE)
+            if (msg.includes("sex")) {
+                return `
+                ❤️ <b>Basic Sex Education:</b><br>
+                • Consent is essential<br>
+                • Use protection<br>
+                • Respect boundaries
+                `;
+            }
+
+            // DEFAULT
+            return `
+            I can help with:<br>
+            • Diseases (fever, cold, headache, stomach, cough)<br>
+            • First aid (burns, cuts)<br>
+            • Stress & wellness<br><br>
+            Try: <i>"Tell me about fever"</i><br>
+            ⚠️ This is general guidance only.
+            `;
+        }
+    </script>
+</body>
+</html>
